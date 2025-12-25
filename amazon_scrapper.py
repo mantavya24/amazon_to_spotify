@@ -1,52 +1,71 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.common.by import By
-import time
 import json
+import time
+from selenium import webdriver
+from selenium.webdriver.firefox.service import Service as FirefoxService
+from webdriver_manager.firefox import GeckoDriverManager
+from selenium.webdriver.common.by import By
 
-def get_amazon_tracks(playlist_url):
-    # Setup Chrome
-    options = webdriver.ChromeOptions()
-    # We leave it in non-headless mode so YOU can log in manually
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+def scrape_amazon_playlist(url):
+    # 1. Setup Firefox
+    options = webdriver.FirefoxOptions()
+    # options.add_argument("--private") # Optional: Open in private mode
     
-    driver.get(playlist_url)
+    driver = webdriver.Firefox(
+        service=FirefoxService(GeckoDriverManager().install()), 
+        options=options
+    )
     
-    print("Please log in and navigate to your playlist if not already there.")
-    input("Press Enter once the playlist is fully loaded on screen...")
+    driver.get(url)
+    print("Firefox opened. Please log in and open the desired playlist.")
+    input("Press ENTER in this terminal once the playlist page is fully loaded...")
 
     tracks = []
-    
-    # Selector strategy: Amazon usually puts track info in 'music-image-row' or similar classes
-    # Note: These selectors change often. You might need to 'Inspect' the page.
-    rows = driver.find_elements(By.TAG_NAME, "music-image-row")
-    
-    # ... inside the loop of get_amazon_tracks ...
-    rows = driver.find_elements(By.TAG_NAME, "music-image-row")
+    seen_track_ids = set()
 
-    for row in rows:
-        try:
-            # Find the primary link (Song Title)
-            title_element = row.find_element(By.CSS_SELECTOR, "music-link[kind='primary'] a")
-            title = title_element.text
-            
-            # Find the secondary link (Artist)
-            artist_element = row.find_element(By.CSS_SELECTOR, "music-link[kind='secondary'] a")
-            artist = artist_element.text
-            
-            tracks.append({"title": title, "artist": artist})
-            print(f"Captured: {title} by {artist}")
-        except Exception as e:
-            # Some rows might be headers or ads
-            continue
-            
-    driver.quit()
+    # 2. Scrolling Logic (Refined for Firefox)
+    print("Scraping tracks... please wait.")
     
-    with open("amazon_playlist.json", "w") as f:
+    # We use a loop to scroll down and capture data in chunks
+    for i in range(10): # Increase this number for very long playlists
+        driver.execute_script("window.scrollBy(0, 1000);")
+        time.sleep(1.5) # Give Firefox a moment to render the new elements
+        
+        rows = driver.find_elements(By.TAG_NAME, "music-image-row")
+        
+        for row in rows:
+            a11y_elements = driver.find_elements(By.CSS_SELECTOR, "div.a11y")
+
+            for el in a11y_elements:
+                try:
+                    label = el.get_attribute("aria-label")
+                    
+                    # We expect a format like: "Song Name, Artist, Album"
+                    if label and "," in label:
+                        parts = [p.strip() for p in label.split(",")]
+                        
+                        # Usually: [0] is Title, [1] is Artist
+                        title = parts[0]
+                        artist = parts[1]
+                        
+                        track_id = f"{title}-{artist}".lower().strip()
+                        if track_id not in seen_track_ids:
+                            tracks.append({
+                                "title": title, 
+                                "artist": artist,
+                                "full_label": label # Keeping the full string just in case
+                            })
+                            seen_track_ids.add(track_id)
+                            print(f"✅ Captured: {title} by {artist}")
+                except Exception as e:
+                    continue
+    # 3. Save to JSON
+    with open("amazon_tracks.json", "w") as f:
         json.dump(tracks, f, indent=4)
     
-    print(f"Saved {len(tracks)} tracks to amazon_playlist.json!")
+    print(f"\n✅ Success! Captured {len(tracks)} unique tracks.")
+    driver.quit()
 
-# Paste your Amazon playlist link here
-get_amazon_tracks("https://music.amazon.com/user-playlists/YOUR_ID_HERE")s
+if __name__ == "__main__":
+    # Test with a public or your own playlist URL
+    url = input("Paste your Amazon Music Playlist URL: ")
+    scrape_amazon_playlist(url)
