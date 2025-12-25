@@ -4,16 +4,13 @@ from selenium import webdriver
 from selenium.webdriver.firefox.service import Service as FirefoxService
 from webdriver_manager.firefox import GeckoDriverManager
 from selenium.webdriver.common.by import By
+# NEW IMPORTS FOR WAITING
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 def scrape_amazon_playlist(url):
-    # 1. Setup Firefox
     options = webdriver.FirefoxOptions()
-    # options.add_argument("--private") # Optional: Open in private mode
-    
-    driver = webdriver.Firefox(
-        service=FirefoxService(GeckoDriverManager().install()), 
-        options=options
-    )
+    driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()), options=options)
     
     driver.get(url)
     print("Firefox opened. Please log in and open the desired playlist.")
@@ -22,43 +19,34 @@ def scrape_amazon_playlist(url):
     tracks = []
     seen_track_ids = set()
 
-    # 2. Scrolling Logic (Refined for Firefox)
-    print("Scraping tracks... please wait.")
-    
-    # We use a loop to scroll down and capture data in chunks
-    for i in range(10): # Increase this number for very long playlists
-        driver.execute_script("window.scrollBy(0, 1000);")
-        time.sleep(1.5) # Give Firefox a moment to render the new elements
-        
-        rows = driver.find_elements(By.TAG_NAME, "music-image-row")
-        
-        for row in rows:
-            a11y_elements = driver.find_elements(By.CSS_SELECTOR, "div.a11y")
+    def capture_visible_tracks():
+        """Helper to find and parse accessibility labels currently on screen."""
+        elements = driver.find_elements(By.CSS_SELECTOR, "div.a11y")
+        for el in elements:
+            try:
+                label = el.get_attribute("aria-label")
+                if label and "," in label:
+                    parts = [p.strip() for p in label.split(",")]
+                    title, artist = parts[0], parts[1]
+                    track_id = f"{title}-{artist}".lower().strip()
+                    if track_id not in seen_track_ids and title != "":
+                        tracks.append({"title": title, "artist": artist})
+                        seen_track_ids.add(track_id)
+                        print(f"✅ Captured: {title} by {artist}")
+            except: continue
 
-            for el in a11y_elements:
-                try:
-                    label = el.get_attribute("aria-label")
-                    
-                    # We expect a format like: "Song Name, Artist, Album"
-                    if label and "," in label:
-                        parts = [p.strip() for p in label.split(",")]
-                        
-                        # Usually: [0] is Title, [1] is Artist
-                        title = parts[0]
-                        artist = parts[1]
-                        
-                        track_id = f"{title}-{artist}".lower().strip()
-                        if track_id not in seen_track_ids:
-                            tracks.append({
-                                "title": title, 
-                                "artist": artist,
-                                "full_label": label # Keeping the full string just in case
-                            })
-                            seen_track_ids.add(track_id)
-                            print(f"✅ Captured: {title} by {artist}")
-                except Exception as e:
-                    continue
-    # 3. Save to JSON
+    # 1. Wait for elements to appear
+    print("Waiting for playlist to render...")
+    WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.a11y")))
+
+    # 2. Capture and Scroll Loop
+    print("Scraping tracks... please wait.")
+    for i in range(12): # Increased range slightly
+        capture_visible_tracks()
+        driver.execute_script("window.scrollBy(0, 800);")
+        time.sleep(1.5)
+
+    # 3. Final Save
     with open("amazon_tracks.json", "w") as f:
         json.dump(tracks, f, indent=4)
     
@@ -66,6 +54,5 @@ def scrape_amazon_playlist(url):
     driver.quit()
 
 if __name__ == "__main__":
-    # Test with a public or your own playlist URL
     url = input("Paste your Amazon Music Playlist URL: ")
     scrape_amazon_playlist(url)
