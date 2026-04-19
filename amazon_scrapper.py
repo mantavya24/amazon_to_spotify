@@ -12,8 +12,7 @@ def scrape_playlists(urls):
     options = webdriver.FirefoxOptions()
     driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()), options=options)
     
-    tracks = []
-    seen_track_ids = set()
+    all_playlists = []
 
     for idx, url in enumerate(urls):
         print(f"\n--- Processing Playlist {idx+1}/{len(urls)} ---")
@@ -24,6 +23,18 @@ def scrape_playlists(urls):
             print(f"Navigated to playlist {idx+1}.")
             
         input("Press ENTER in this terminal once the playlist page is fully loaded...")
+        
+        # Attempt to capture the playlist name from the H1 tag or the document title
+        try:
+            playlist_name = driver.find_element(By.CSS_SELECTOR, "h1").text
+        except:
+            playlist_name = driver.title.replace(" on Amazon Music", "").replace(" on Amazon", "").strip()
+            if not playlist_name:
+                playlist_name = f"Amazon Playlist {idx+1}"
+        print(f"Identified Playlist Name: {playlist_name}")
+
+        tracks = []
+        seen_track_ids = set()
 
         def capture_visible_tracks():
             """Helper to find and parse accessibility labels currently on screen."""
@@ -54,12 +65,18 @@ def scrape_playlists(urls):
             capture_visible_tracks()
             driver.execute_script("window.scrollBy(0, 800);")
             time.sleep(1.5)
+            
+        all_playlists.append({
+            "playlist_name": playlist_name,
+            "tracks": tracks
+        })
 
     # 3. Final Save
     with open("amazon_tracks.json", "w") as f:
-        json.dump(tracks, f, indent=4)
+        json.dump(all_playlists, f, indent=4)
     
-    print(f"\n✅ Success! Captured {len(tracks)} unique tracks from {len(urls)} playlist(s).")
+    total_tracks = sum(len(p["tracks"]) for p in all_playlists)
+    print(f"\n✅ Success! Captured {total_tracks} unique tracks across {len(urls)} playlist(s).")
     driver.quit()
 
 if __name__ == "__main__":

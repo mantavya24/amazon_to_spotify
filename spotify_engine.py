@@ -55,5 +55,15 @@ if __name__ == "__main__":
     with open("amazon_tracks.json", "r") as f:
         data = json.load(f)
     
-    playlist_name = input("Enter the name for your new Spotify playlist: ")
-    create_spotify_playlist(playlist_name, data)
+    if isinstance(data, list) and len(data) > 0 and 'playlist_name' in data[0]:
+        # New format: list of playlists
+        print(f"Found {len(data)} distinct playlists in amazon_tracks.json. Creating them...")
+        for idx, playlist in enumerate(data):
+            name = playlist.get('playlist_name', f"Amazon Playlist {idx+1}")
+            tracks = playlist.get('tracks', [])
+            print(f"\n--- Importing Playlist: {name} ---")
+            create_spotify_playlist(name, tracks)
+    else:
+        # Legacy format: flat list of tracks
+        playlist_name = input("Enter the name for your new Spotify playlist: ")
+        create_spotify_playlist(playlist_name, data)
