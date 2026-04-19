@@ -1,0 +1,13 @@
+# Paste your Amazon playlist URLs here, one per line
+https://music.amazon.in/user-playlists/062a3f9bb50f4174a2b27dbcb2b53a64i8n0?ref=dm_sh_2500-613a-8db1-96c4-6220f
+https://music.amazon.in/user-playlists/f43bdd09667545e68bb888709b827bbci8n0?ref=dm_sh_46e2-53c9-09f2-1916-9a988
+https://music.amazon.in/user-playlists/3b22b94287a6447f97eb067e91aa3d2di8n0?ref=dm_sh_821b-f540-7bd2-3b14-b1f31
+https://music.amazon.in/user-playlists/83ffe6a2ed1643389a9f7a79ea1983e0i8n0?ref=dm_sh_cb4e-2b50-0360-be13-9a606
+https://music.amazon.in/user-playlists/a639eb82ff784ca5bbbf334ab990d54di8n0?ref=dm_sh_9977-53f8-13ed-ea51-7c61f
+https://music.amazon.in/user-playlists/de2e605a4a994ee7a8d0dd5ac10df8dei8n0?ref=dm_sh_3463-7693-07cd-1523-1c24f
+https://music.amazon.in/user-playlists/fef6fda01fe64dd2a25753c1094ce10ai8n0?ref=dm_sh_b7af-dcb2-f046-6ae2-82223
+https://music.amazon.in/user-playlists/28efef82c39644c08d13c415ba5c7159i8n0?ref=dm_sh_0564-279c-af4e-d24a-0c05b
+https://music.amazon.in/user-playlists/9694e4a5b602466c8a0db4c5431e9161i8n0?ref=dm_sh_ad52-5ecb-ebc9-c650-d0e3f
+https://music.amazon.in/user-playlists/bb31716070b64d73b0bf0bdbfe9327a9i8n0?ref=dm_sh_2db8-ef43-c946-51cf-8b629
+https://music.amazon.in/user-playlists/4bd498e0e4ed4e9dbc1a7a8b7e5f473bi8n0?ref=dm_sh_61df-710e-0777-f1c7-0fbb6
+https://music.amazon.in/user-playlists/baf0ff0f56994fdea71236e8664d4e39i8n0?ref=dm_sh_b10d-1d34-279e-5f5c-1cc47
