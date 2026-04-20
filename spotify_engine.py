@@ -1,5 +1,6 @@
 import os
 import json
+import time
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from dotenv import load_dotenv
@@ -9,12 +10,18 @@ from thefuzz import fuzz
 load_dotenv()
 
 # Setup Spotify Authentication
-sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
-    client_id=os.getenv('SPOTIPY_CLIENT_ID'),
-    client_secret=os.getenv('SPOTIPY_CLIENT_SECRET'),
-    redirect_uri=os.getenv('SPOTIPY_REDIRECT_URI'),
-    scope="playlist-modify-public"
-))
+sp = spotipy.Spotify(
+    auth_manager=SpotifyOAuth(
+        client_id=os.getenv('SPOTIPY_CLIENT_ID'),
+        client_secret=os.getenv('SPOTIPY_CLIENT_SECRET'),
+        redirect_uri=os.getenv('SPOTIPY_REDIRECT_URI'),
+        scope="playlist-modify-public"
+    ),
+    requests_timeout=20,
+    retries=5,
+    status_retries=5,
+    backoff_factor=0.5
+)
 
 def create_spotify_playlist(name, tracks):
     user_id = sp.current_user()['id']
@@ -45,6 +52,8 @@ def create_spotify_playlist(name, tracks):
         
         if not found:
             print(f"❌ Could not find: {track['title']} by {track['artist']}")
+            
+        time.sleep(0.3)  # Small delay to prevent API timeout bursts
 
     # 3. Add tracks in batches (Spotify limit is 100 per call)
     if track_uris:
